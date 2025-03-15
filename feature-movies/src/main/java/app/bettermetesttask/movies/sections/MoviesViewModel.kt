@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -58,10 +57,10 @@ class MoviesViewModel @Inject constructor(
     }
 
     fun hideMovieDetails() {
-        activeMovie = null
+        updateActiveMovie(null)
     }
 
-    private fun updateActiveMovie(movie: Movie) {
+    private fun updateActiveMovie(movie: Movie?) {
         activeMovie = movie
     }
 
