@@ -47,8 +47,8 @@ android {
 
     // Forcing proper java version across all the builds
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
+//        sourceCompatibility JavaVersion.VERSION_21
+//        targetCompatibility JavaVersion.VERSION_21
     }
 
     kotlinOptions {
@@ -56,11 +56,11 @@ android {
     }
 
 // Uncomment if you're having trouble with version incompatibility
-//    java {
-//        toolchain {
-//            languageVersion = JavaLanguageVersion.of(17)
-//        }
-//    }
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
 
     if (gradle.startParameter.taskNames
             .collect { item -> item.contains("UnitTestKotlin") }

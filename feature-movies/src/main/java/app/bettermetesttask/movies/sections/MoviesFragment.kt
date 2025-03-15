@@ -40,7 +40,7 @@ class MoviesFragment : Fragment(R.layout.movies_fragment), Injectable {
         super.onViewCreated(view, savedInstanceState)
 
         adapter.onItemClicked = { movie ->
-            viewModel.openMovieDetails(movie)
+            viewModel.showMovieDetails(movie)
         }
 
         adapter.onItemLiked = { movie ->
@@ -50,8 +50,6 @@ class MoviesFragment : Fragment(R.layout.movies_fragment), Injectable {
 
     override fun onResume() {
         super.onResume()
-
-        viewModel.loadMovies()
 
         job = lifecycleScope.launchWhenCreated {
             viewModel.moviesStateFlow.collect(::renderMoviesState)

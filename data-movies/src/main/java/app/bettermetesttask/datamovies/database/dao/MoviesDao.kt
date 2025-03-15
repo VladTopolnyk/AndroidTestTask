@@ -10,7 +10,7 @@ import app.bettermetesttask.datamovies.database.entities.MovieEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface MoviesDao{
+interface MoviesDao {
 
     @Query("SELECT * FROM MoviesTable")
     suspend fun selectMovies(): List<MovieEntity>

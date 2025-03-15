@@ -1,38 +1,46 @@
 package app.bettermetesttask.datamovies.repository
 
-import app.bettermetesttask.datamovies.repository.stores.MoviesLocalStore
-import app.bettermetesttask.datamovies.repository.stores.MoviesMapper
-import app.bettermetesttask.datamovies.repository.stores.MoviesRestStore
 import app.bettermetesttask.domaincore.utils.Result
+import app.bettermetesttask.domainmovies.datasource.MoviesLocalDataSource
+import app.bettermetesttask.domainmovies.datasource.MoviesRemoteDataSource
 import app.bettermetesttask.domainmovies.entries.Movie
 import app.bettermetesttask.domainmovies.repository.MoviesRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class MoviesRepositoryImpl @Inject constructor(
-    private val localStore: MoviesLocalStore,
-    private val mapper: MoviesMapper
+    private val localDataSource: MoviesLocalDataSource,
+    private val remoteDataSource: MoviesRemoteDataSource
 ) : MoviesRepository {
 
-    private val restStore = MoviesRestStore()
-
     override suspend fun getMovies(): Result<List<Movie>> {
-        TODO("Not yet implemented")
+        val moviesFromRemote = remoteDataSource.fetchMovies()
+        val movies = if (moviesFromRemote is Result.Success) {
+            storeMoviesToLocal(moviesFromRemote.data)
+            moviesFromRemote
+        } else {
+            localDataSource.getMovies()
+        }
+        return movies
+    }
+
+    private suspend fun storeMoviesToLocal(movies: List<Movie>){
+        localDataSource.storeMovies(movies)
     }
 
     override suspend fun getMovie(id: Int): Result<Movie> {
-        return Result.of { mapper.mapFromLocal(localStore.getMovie(id)) }
+        return localDataSource.getMovie(id)
     }
 
     override fun observeLikedMovieIds(): Flow<List<Int>> {
-        return localStore.observeLikedMoviesIds()
+        return localDataSource.observeLikedMovieIds()
     }
 
     override suspend fun addMovieToFavorites(movieId: Int) {
-        localStore.likeMovie(movieId)
+        localDataSource.likeMovie(movieId)
     }
 
     override suspend fun removeMovieFromFavorites(movieId: Int) {
-        localStore.dislikeMovie(movieId)
+        localDataSource.dislikeMovie(movieId)
     }
 }
