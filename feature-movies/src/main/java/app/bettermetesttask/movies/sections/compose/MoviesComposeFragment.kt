@@ -24,11 +24,14 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +52,7 @@ import app.bettermetesttask.featurecommon.injection.viewmodel.SimpleViewModelPro
 import app.bettermetesttask.movies.sections.MoviesState
 import app.bettermetesttask.movies.sections.MoviesViewModel
 import app.bettermetesttask.movies.sections.compose.common.ShimmerItem
+import app.bettermetesttask.movies.sections.compose.common.clickableWithoutRippleEffect
 import app.bettermetesttask.movies.sections.compose.theme.ShimmerItemColor
 import coil3.compose.AsyncImage
 import javax.inject.Inject
@@ -65,6 +69,7 @@ class MoviesComposeFragment : Fragment(), Injectable {
         )
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -78,7 +83,55 @@ class MoviesComposeFragment : Fragment(), Injectable {
                 val viewState by viewModel.moviesStateFlow.collectAsStateWithLifecycle()
                 MoviesComposeScreen(viewState, likeMovie = { movie ->
                     viewModel.likeMovie(movie)
-                })
+                }, openDetailScreen = {
+                    viewModel.showMovieDetails(it)
+                }
+                )
+                viewModel.activeMovie?.let { movie ->
+                    MovieDetailsBottomSheet(
+                        movie = movie,
+                        onDismissRequest = {
+                            viewModel.hideMovieDetails()
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MovieDetailsBottomSheet(
+    movie: Movie,
+    onDismissRequest: () -> Unit,
+    sheetState: SheetState = rememberModalBottomSheetState(),
+) {
+    ModalBottomSheet(
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        sheetState = sheetState
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = movie.posterPath,
+                contentDescription = "Movie Poster",
+                modifier = Modifier
+                    .size(width = 60.dp, height = 100.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(ShimmerItemColor),
+                contentScale = ContentScale.Inside
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = movie.title, fontSize = 24.sp, color = Color.Black)
+                Text(text = movie.description, fontSize = 20.sp, color = Color.Gray)
             }
         }
     }
@@ -88,6 +141,7 @@ class MoviesComposeFragment : Fragment(), Injectable {
 private fun MoviesComposeScreen(
     moviesState: MoviesState,
     likeMovie: (Movie) -> Unit,
+    openDetailScreen: (Movie) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -99,6 +153,8 @@ private fun MoviesComposeScreen(
                 items(moviesState.movies) { item ->
                     MovieItem(item, onLikeClicked = {
                         likeMovie(item)
+                    }, onItemClick = {
+                        openDetailScreen(item)
                     })
                 }
             } else {
@@ -113,6 +169,7 @@ private fun MoviesComposeScreen(
 @Composable
 fun LoadingMovieItem() {
     MovieCard {
+
         ShimmerItem(
             width = 60.dp,
             shape = RoundedCornerShape(8.dp)
@@ -136,9 +193,12 @@ fun LoadingMovieItem() {
 
 
 @Composable
-fun MovieItem(movie: Movie, onLikeClicked: (Int) -> Unit) {
-    MovieCard {
-
+fun MovieItem(movie: Movie, onLikeClicked: (Int) -> Unit, onItemClick: () -> Unit) {
+    MovieCard(
+        onClick = {
+            onItemClick()
+        }
+    ) {
         AsyncImage(
             model = movie.posterPath,
             contentDescription = "Movie Poster",
@@ -169,11 +229,14 @@ fun MovieItem(movie: Movie, onLikeClicked: (Int) -> Unit) {
 }
 
 @Composable
-fun MovieCard(content: @Composable RowScope.() -> Unit) {
+fun MovieCard(onClick: () -> Unit = {}, content: @Composable RowScope.() -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickableWithoutRippleEffect {
+                onClick()
+            },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
@@ -201,5 +264,5 @@ private fun PreviewsMoviesComposeScreen() {
                 liked = index % 2 == 0,
             )
         }
-    ), likeMovie = {})
+    ), likeMovie = {}, openDetailScreen = {})
 }
